@@ -1,47 +1,46 @@
+import { createClient } from '@supabase/supabase-js';
+
 export default async function handler(req, res) {
-  // 1. Segurança Básica: Configura cabeçalhos (CORS) para aceitar conexão do seu site
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // CORS (Permite que seu site fale com essa API)
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // Se for apenas um "ping" (OPTIONS), responde que está tudo ok
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  // 2. Pega a mensagem que veio do PWA
-  const { text } = req.query;
-
-  if (!text) {
-    return res.status(400).json({ error: 'Texto não fornecido' });
-  }
-
-  // 3. Pega os segredos do cofre da Vercel
-  const token = process.env.TELEGRAM_TOKEN;
-  const chatId = process.env.CHAT_ID;
-
-  if (!token || !chatId) {
-    return res.status(500).json({ error: 'Erro de Configuração na Vercel (Token/ID faltando)' });
-  }
+  const { text } = req.query; // Ex: "7 %E2%99%A5"
+  if (!text) return res.status(400).json({ error: 'Texto faltando' });
 
   try {
-    // 4. Manda pro Telegram
-    const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}`;
-    
-    const response = await fetch(url);
-    const data = await response.json();
+    // 1. Conecta no Supabase
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_KEY
+    );
 
-    if (data.ok) {
-      return res.status(200).json({ success: true, message: 'Enviado com sucesso' });
-    } else {
-      return res.status(500).json({ error: 'Telegram recusou', details: data });
+    // 2. Separa Valor e Naipe
+    const partes = text.split(' ');
+    const valor = partes[0];
+    const naipe = partes[1];
+
+    // 3. Atualiza a carta no banco (ID 'atual')
+    const { error } = await supabase
+      .from('cartas')
+      .update({ valor: valor, naipe: naipe })
+      .eq('id', 'atual');
+
+    if (error) throw error;
+
+    // 4. Manda pro Telegram (Seu backup)
+    const token = process.env.TELEGRAM_TOKEN;
+    const chatId = process.env.CHAT_ID;
+    if (token && chatId) {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(text)}`);
     }
+
+    return res.status(200).json({ success: true });
+
   } catch (error) {
-    return res.status(500).json({ error: 'Erro interno do servidor', details: error.message });
+    console.error("Erro Supabase:", error);
+    return res.status(500).json({ error: 'Erro ao salvar' });
   }
 }
