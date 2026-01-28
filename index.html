@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Telepathy</title> <meta name="theme-color" content="#000000">
+    <title>Telepathy Debug</title>
+    
+    <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="manifest.json">
@@ -13,61 +15,27 @@
           content="default-src 'self'; 
                    script-src 'self' 'unsafe-inline'; 
                    style-src 'self' 'unsafe-inline'; 
-                   connect-src 'self' https://api.telegram.org; 
+                   connect-src 'self'; 
                    img-src 'self' data:; 
                    object-src 'none'; 
                    base-uri 'self';">
 
     <style>
-        /* Reset total para remover qualquer margem branca */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #000; overflow: hidden; height: 100vh; width: 100vw; font-family: monospace; }
         
-        body { 
-            background-color: #000; 
-            overflow: hidden; 
-            height: 100vh; 
-            width: 100vw;
-            font-family: 'Courier New', monospace; 
-        }
-        
-        /* Tela de Menu (Falsa) */
         #menu-screen {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #0a0a0a;
-            color: #333;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 100vh; background-color: #0a0a0a; color: #333;
         }
-        
         #btn-performance {
-            border: 1px solid #333;
-            color: #444;
-            background: transparent;
-            padding: 20px 50px;
-            font-size: 14px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: all 0.3s;
-            cursor: pointer;
+            border: 1px solid #333; color: #444; background: transparent;
+            padding: 20px 50px; font-size: 14px; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 2px;
         }
-        
-        #btn-performance:active {
-            background-color: #111;
-            color: #666;
-        }
-
-        /* Camada Invisível de Toque (A Mágica) */
         #stealth-layer {
-            display: none; /* Começa escondida */
-            position: fixed;
-            top: 0; left: 0; 
-            width: 100%; height: 100%;
-            background: black;
-            z-index: 9999;
-            cursor: none; /* Esconde o cursor */
+            display: none; position: fixed; top: 0; left: 0; 
+            width: 100%; height: 100%; background: black; z-index: 9999; cursor: none;
         }
     </style>
 
@@ -81,43 +49,31 @@
 
     <div id="menu-screen">
         <button id="btn-performance" onclick="ativarModoStealth()">Performance Mode</button>
-        <div style="margin-top: 20px; font-size: 10px; color: #222;">v3.0.1 Stable</div>
+        <div style="margin-top: 20px; font-size: 10px; color: #222;">v5.0 DEBUG</div>
     </div>
 
     <div id="stealth-layer"></div>
 
     <script>
-        // ==========================================
-        // ⚙️ CONFIGURAÇÃO DA API TELEGRAM
-        // ==========================================
-        const BOT_TOKEN = "SEU_TOKEN_AQUI"; // << COLAR TOKEN AQUI
-        const CHAT_ID = "SEU_CHAT_ID_AQUI"; // << COLAR ID AQUI
-        // ==========================================
-
+        // --- VARIÁVEIS ---
         let contagemToques = 0;
-        let fase = "VALOR"; // Pode ser: VALOR ou NAIPE
+        let fase = "VALOR"; 
         let valorDetectado = "";
         let naipeDetectado = "";
-
-        // Controle de Gesto
         let touchStartX = 0;
         let touchStartY = 0;
         const layer = document.getElementById('stealth-layer');
 
         function ativarModoStealth() {
-            // Desbloqueia motor de vibração
             if (navigator.vibrate) navigator.vibrate(10); 
-
             document.getElementById('menu-screen').style.display = 'none';
             layer.style.display = 'block';
-            
-            // Tenta Fullscreen
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
             }
         }
 
-        // --- CAPTURA DE TOQUES ---
+        // --- GESTOS ---
         layer.addEventListener('touchstart', (e) => {
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
@@ -126,7 +82,6 @@
         layer.addEventListener('touchend', (e) => {
             let touchEndX = e.changedTouches[0].screenX;
             let touchEndY = e.changedTouches[0].screenY;
-            
             processarGesto(touchStartX, touchStartY, touchEndX, touchEndY);
         }, {passive: false});
 
@@ -134,26 +89,20 @@
             let diffX = endX - startX;
             let diffY = endY - startY;
 
-            // 1. CLIQUE (TOQUE RÁPIDO - MENOS DE 20px)
+            // 1. CLIQUE
             if (Math.abs(diffX) < 20 && Math.abs(diffY) < 20) {
-                if (fase === "VALOR") {
-                    contarToque();
-                } else if (fase === "NAIPE") {
-                    definirNaipe(endX, endY);
-                }
+                if (fase === "VALOR") { contarToque(); } 
+                else if (fase === "NAIPE") { definirNaipe(endX, endY); }
             } 
-            // 2. SWIPE DIREITA (ARRASTAR - MAIS DE 80px)
+            // 2. SWIPE DIREITA
             else if (diffX > 80 && Math.abs(diffY) < 60) { 
-                if (fase === "VALOR" && contagemToques > 0) {
-                    confirmarValor(); 
-                }
+                if (fase === "VALOR" && contagemToques > 0) { confirmarValor(); }
             }
         }
 
-        // --- FASE 1: NÚMEROS ---
+        // --- LÓGICA ---
         function contarToque() {
             contagemToques++;
-            // 📳 VIBRAÇÃO: SIM (50ms)
             if (navigator.vibrate) navigator.vibrate(50);
             console.log("Toque: " + contagemToques);
         }
@@ -161,51 +110,52 @@
         function confirmarValor() {
             const mapa = { 1: "Ás", 11: "Valete", 12: "Dama", 13: "Rei" };
             valorDetectado = mapa[contagemToques] || contagemToques;
-            
             fase = "NAIPE"; 
-            // 📳 VIBRAÇÃO: NÃO (Swipe Silencioso conforme pedido)
-            console.log("Valor Confirmado: " + valorDetectado);
+            console.log("Valor: " + valorDetectado);
         }
 
-        // --- FASE 2: NAIPES ---
         function definirNaipe(x, y) {
             let w = window.innerWidth;
             let h = window.innerHeight;
-
-            // Quadrantes
             if (y < h / 2) {
-                if (x < w / 2) naipeDetectado = "Espadas"; // Cima Esq
-                else naipeDetectado = "Copas";             // Cima Dir
+                if (x < w / 2) naipeDetectado = "Espadas";
+                else naipeDetectado = "Copas";
             } else {
-                if (x < w / 2) naipeDetectado = "Paus";    // Baixo Esq
-                else naipeDetectado = "Ouros";             // Baixo Dir
+                if (x < w / 2) naipeDetectado = "Paus";
+                else naipeDetectado = "Ouros";
             }
-
-            // 📳 VIBRAÇÃO: SIM (50ms)
             if (navigator.vibrate) navigator.vibrate(50);
-
-            enviarParaAPI();
+            
+            // CHAMA A FUNÇÃO COM O ALERTA
+            enviarComAlerta();
         }
 
-       // --- ENVIO SEGURO (CORRIGIDO) ---
-        function enviarParaAPI() {
+        // --- FUNÇÃO DE ENVIO COM DEBUG (AQUI ESTÁ O POP-UP) ---
+        function enviarComAlerta() {
             const textoFinal = `${valorDetectado} de ${naipeDetectado}`;
             
-            // O CORRETO É ASSIM: Apontando para o seu backend, não pro Telegram direto
+            // O caminho para o backend
             const urlBackend = `/api/send?text=${encodeURIComponent(textoFinal)}`;
+
+            // ALERTA 1: Avisa que vai tentar enviar
+            alert("⚠️ TESTE INICIADO!\nTentando enviar: " + textoFinal + "\nPara: " + urlBackend);
 
             fetch(urlBackend)
             .then(res => {
                 if(res.ok) {
-                    console.log("Sucesso: Enviado via Backend Seguro");
-                    // Vibração de sucesso
+                    // ALERTA 2: Sucesso
+                    alert("✅ SUCESSO!\nO servidor respondeu OK (200).\nVerifique o Telegram.");
                     if (navigator.vibrate) navigator.vibrate(200); 
                     resetarSistema();
                 } else {
-                    console.error("Erro: O Backend não respondeu (Verifique Logs da Vercel)");
+                    // ALERTA 3: Erro do Servidor
+                    alert("❌ ERRO DO SERVIDOR!\nCódigo: " + res.status + "\nTexto: " + res.statusText);
                 }
             })
-            .catch(err => console.error("Erro de Conexão:", err));
+            .catch(err => {
+                // ALERTA 4: Erro de Rede ou Código
+                alert("💀 ERRO CRÍTICO!\nOcorreu um erro no código ou na rede:\n" + err.message);
+            });
         }
 
         function resetarSistema() {
@@ -215,12 +165,10 @@
             naipeDetectado = "";
         }
 
-        // --- 🚀 ATIVAÇÃO DO PWA (SERVICE WORKER) ---
+        // PWA REGISTER
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('PWA Service Worker Registrado'))
-                    .catch(err => console.log('Erro PWA:', err));
+                navigator.serviceWorker.register('./sw.js');
             });
         }
     </script>
