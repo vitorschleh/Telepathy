@@ -187,21 +187,25 @@
             enviarParaAPI();
         }
 
-        // --- ENVIO SEGURO ---
+       // --- ENVIO SEGURO (CORRIGIDO) ---
         function enviarParaAPI() {
             const textoFinal = `${valorDetectado} de ${naipeDetectado}`;
-            const urlAPI = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(textoFinal)}`;
+            
+            // O CORRETO É ASSIM: Apontando para o seu backend, não pro Telegram direto
+            const urlBackend = `/api/send?text=${encodeURIComponent(textoFinal)}`;
 
-            fetch(urlAPI)
+            fetch(urlBackend)
             .then(res => {
                 if(res.ok) {
-                    console.log("Sucesso: " + textoFinal);
-                    // Vibração final longa de sucesso (Opcional)
+                    console.log("Sucesso: Enviado via Backend Seguro");
+                    // Vibração de sucesso
                     if (navigator.vibrate) navigator.vibrate(200); 
                     resetarSistema();
+                } else {
+                    console.error("Erro: O Backend não respondeu (Verifique Logs da Vercel)");
                 }
             })
-            .catch(err => console.error("Erro:", err));
+            .catch(err => console.error("Erro de Conexão:", err));
         }
 
         function resetarSistema() {
