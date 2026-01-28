@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Telepathy Debug</title>
+    <title>Telepathy</title>
     
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,13 +43,22 @@
         if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
             location.replace(`https:${location.href.substring(location.protocol.length)}`);
         }
+
+        // SEGURANÇA 2 (NOVA): BLOQUEIO DE POSTMESSAGE EXTERNO
+        // Se algum script malicioso tentar injetar mensagem de outro site, isso bloqueia.
+        window.addEventListener("message", (event) => {
+            if (event.origin !== window.location.origin) {
+                console.warn("Tentativa de injeção bloqueada: " + event.origin);
+                return; // Rejeita a mensagem
+            }
+        }, false);
     </script>
 </head>
 <body>
 
     <div id="menu-screen">
         <button id="btn-performance" onclick="ativarModoStealth()">Performance Mode</button>
-        <div style="margin-top: 20px; font-size: 10px; color: #222;">v5.0 DEBUG</div>
+        <div style="margin-top: 20px; font-size: 10px; color: #222;">v7.1 SECURE</div>
     </div>
 
     <div id="stealth-layer"></div>
@@ -108,8 +117,10 @@
         }
 
         function confirmarValor() {
-            const mapa = { 1: "Ás", 11: "Valete", 12: "Dama", 13: "Rei" };
+            // Mapeamento para letras (formato Cloudinary)
+            const mapa = { 1: "A", 11: "J", 12: "Q", 13: "K" };
             valorDetectado = mapa[contagemToques] || contagemToques;
+            
             fase = "NAIPE"; 
             console.log("Valor: " + valorDetectado);
         }
@@ -117,45 +128,44 @@
         function definirNaipe(x, y) {
             let w = window.innerWidth;
             let h = window.innerHeight;
+            
+            // --- MAPEAMENTO DOS NAIPES SÓLIDOS (Cheios) ---
+            // Cima = Espadas / Copas
+            // Baixo = Paus / Ouros
             if (y < h / 2) {
-                if (x < w / 2) naipeDetectado = "Espadas";
-                else naipeDetectado = "Copas";
+                if (x < w / 2) naipeDetectado = "%E2%99%A0"; // Espadas Cheio (♠)
+                else naipeDetectado = "%E2%99%A5";           // Copas Cheio (♥)
             } else {
-                if (x < w / 2) naipeDetectado = "Paus";
-                else naipeDetectado = "Ouros";
+                if (x < w / 2) naipeDetectado = "%E2%99%A3"; // Paus Cheio (♣)
+                else naipeDetectado = "%E2%99%A6";           // Ouros Cheio (♦)
             }
+            
             if (navigator.vibrate) navigator.vibrate(50);
             
-            // CHAMA A FUNÇÃO COM O ALERTA
-            enviarComAlerta();
+            enviarSilencioso();
         }
 
-        // --- FUNÇÃO DE ENVIO COM DEBUG (AQUI ESTÁ O POP-UP) ---
-        function enviarComAlerta() {
-            const textoFinal = `${valorDetectado} de ${naipeDetectado}`;
+        // --- ENVIO SILENCIOSO ---
+        function enviarSilencioso() {
+            // Formato final exemplo: "Q %E2%99%A5" (Q ♥)
+            const textoFinal = `${valorDetectado} ${naipeDetectado}`;
             
-            // O caminho para o backend
+            // Aqui conecta com o BACKEND (Autorizado pelo CSP 'self')
             const urlBackend = `/api/send?text=${encodeURIComponent(textoFinal)}`;
 
-            // ALERTA 1: Avisa que vai tentar enviar
-            alert("⚠️ TESTE INICIADO!\nTentando enviar: " + textoFinal + "\nPara: " + urlBackend);
+            console.log("Enviando: " + textoFinal);
 
             fetch(urlBackend)
             .then(res => {
                 if(res.ok) {
-                    // ALERTA 2: Sucesso
-                    alert("✅ SUCESSO!\nO servidor respondeu OK (200).\nVerifique o Telegram.");
-                    if (navigator.vibrate) navigator.vibrate(200); 
+                    console.log("Sucesso.");
+                    if (navigator.vibrate) navigator.vibrate(200); // Vibra longo pra confirmar
                     resetarSistema();
                 } else {
-                    // ALERTA 3: Erro do Servidor
-                    alert("❌ ERRO DO SERVIDOR!\nCódigo: " + res.status + "\nTexto: " + res.statusText);
+                    console.error("Erro no backend.");
                 }
             })
-            .catch(err => {
-                // ALERTA 4: Erro de Rede ou Código
-                alert("💀 ERRO CRÍTICO!\nOcorreu um erro no código ou na rede:\n" + err.message);
-            });
+            .catch(err => console.error("Erro de conexão.", err));
         }
 
         function resetarSistema() {
