@@ -57,7 +57,7 @@
 
     <div id="menu-screen">
         <button id="btn-performance" onclick="ativarModoStealth()">Performance Mode</button>
-        <div style="margin-top: 20px; font-size: 10px; color: #ff0000; font-weight: bold;">v9.0 CACHE KILLER</div>
+        <div style="margin-top: 20px; font-size: 10px; color: #2cff05; font-weight: bold;">v10.0 FINAL</div>
     </div>
 
     <div id="stealth-layer"></div>
@@ -167,21 +167,20 @@
                 if (response.ok) {
                     console.log("✅ Sucesso! Backend recebeu.");
                     if (navigator.vibrate) navigator.vibrate(200); 
-                    resetarSistema();
-                } else {
-                    console.error("❌ Erro no backend: " + response.status);
-                }
-            } catch (err) {
-                console.error("❌ Erro de conexão.", err);
+                    
+                   // 3. O RESET DE SEGURANÇA (Pocket Dial Protection)
+                // Esperamos 500ms só para você sentir a vibração, e aí... ZERAMOS O APP!
+                setTimeout(() => {
+                    window.location.reload(); 
+                }, 500);
+            } else {
+                console.error('Erro na API');
+                if (navigator.vibrate) navigator.vibrate(500); // Vibra longo se der erro
             }
-        }
-
-        function resetarSistema() {
-            contagemToques = 0;
-            fase = "VALOR";
-            valorDetectado = "";
-            naipeDetectado = "";
-        }
+        })
+        .catch(error => {
+            console.error('Erro de conexão:', error);
+        });
     </script>
 
 </body>
