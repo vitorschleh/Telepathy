@@ -7,8 +7,8 @@ export default async function handler(req, res) {
   const client = createClient({
     password: process.env.REDIS_PASSWORD,
     socket: {
-      host: process.env.REDIS_ENDPOINT.split(':')[0],
-      port: parseInt(process.env.REDIS_ENDPOINT.split(':')[1])
+      host: process.env.REDIS_URL.split(':')[0],
+      port: parseInt(process.env.REDIS_URL.split(':')[1])
     }
   });
 
