@@ -57,7 +57,7 @@
 
     <div id="menu-screen">
         <button id="btn-performance" onclick="ativarModoStealth()">Performance Mode</button>
-        <div style="margin-top: 20px; font-size: 10px; color: #222;">v7.1 SECURE POST</div>
+        <div style="margin-top: 20px; font-size: 10px; color: #ff0000; font-weight: bold;">v9.0 CACHE KILLER</div>
     </div>
 
     <div id="stealth-layer"></div>
@@ -139,13 +139,12 @@
             
             if (navigator.vibrate) navigator.vibrate(50);
             
-            // Chama a nova função de envio corrigida
+            // Chama a função de envio via POST
             enviarSilencioso();
         }
 
-        // --- ENVIO SILENCIOSO CORRIGIDO (MÉTODO POST) ---
+        // --- ENVIO SILENCIOSO (POST CORRETO) ---
         async function enviarSilencioso() {
-            // Cria o objeto exato que a Galeria espera
             const objetoMagico = {
                 valor: valorDetectado,
                 naipe: naipeDetectado
@@ -155,19 +154,19 @@
 
             try {
                 const response = await fetch('/api/send', {
-                    method: 'POST', // AGORA SIM: O Crachá Correto!
+                    method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        // O Pulo do Gato: Backend espera 'data' como string para salvar no Redis
+                        // Empacota como string para o Backend salvar no Redis
                         data: JSON.stringify(objetoMagico)
                     })
                 });
 
                 if (response.ok) {
-                    console.log("✅ Sucesso! Backend aceitou.");
-                    if (navigator.vibrate) navigator.vibrate(200); // Vibra longo pra confirmar
+                    console.log("✅ Sucesso! Backend recebeu.");
+                    if (navigator.vibrate) navigator.vibrate(200); 
                     resetarSistema();
                 } else {
                     console.error("❌ Erro no backend: " + response.status);
@@ -183,12 +182,28 @@
             valorDetectado = "";
             naipeDetectado = "";
         }
+    </script>
 
-        // PWA REGISTER
+    <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js');
+            // 1. Remove qualquer Service Worker antigo que esteja atrapalhando
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
             });
+            
+            // 2. Na primeira vez que rodar essa versão, limpa o cache e recarrega a página
+            if (!localStorage.getItem('cache_cleared_v9')) {
+                localStorage.setItem('cache_cleared_v9', 'true');
+                
+                caches.keys().then(names => {
+                    for (let name of names) caches.delete(name);
+                });
+                
+                console.log("Cache limpo. Recarregando para versão nova...");
+                window.location.reload();
+            }
         }
     </script>
 </body>
