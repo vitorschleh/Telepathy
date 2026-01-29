@@ -71,12 +71,38 @@
         let naipeDetectado = "";
         let touchStartX = 0;
         let touchStartY = 0;
+        let wakeLock = null; // Variável para segurar a tela
         const layer = document.getElementById('stealth-layer');
 
+        // --- BLINDAGEM DE TELA (WAKE LOCK) ---
+        async function ativarWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    console.log("🛡️ TELA BLINDADA: Wake Lock Ativo!");
+                }
+            } catch (err) {
+                console.error("Erro ao blindar tela:", err);
+            }
+        }
+
+        // Reativa a blindagem se o app for minimizado e voltar
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                ativarWakeLock();
+            }
+        });
+
+        // --- INICIALIZAÇÃO ---
         function ativarModoStealth() {
             if (navigator.vibrate) navigator.vibrate(10); 
+            
+            // ATIVA A BLINDAGEM DE TELA AGORA (No clique)
+            ativarWakeLock();
+
             document.getElementById('menu-screen').style.display = 'none';
             layer.style.display = 'block';
+            
             if (document.documentElement.requestFullscreen) {
                 document.documentElement.requestFullscreen().catch(err => console.log(err));
             }
@@ -144,7 +170,7 @@
             enviarSilencioso();
         }
 
-        // --- ENVIO SILENCIOSO (CORRIGIDO: Sem erros de sintaxe) ---
+        // --- ENVIO SILENCIOSO ---
         async function enviarSilencioso() {
             const objetoMagico = {
                 valor: valorDetectado,
