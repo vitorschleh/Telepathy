@@ -44,12 +44,11 @@
             location.replace(`https:${location.href.substring(location.protocol.length)}`);
         }
 
-        // SEGURANÇA 2 (NOVA): BLOQUEIO DE POSTMESSAGE EXTERNO
-        // Se algum script malicioso tentar injetar mensagem de outro site, isso bloqueia.
+        // SEGURANÇA 2: BLOQUEIO DE POSTMESSAGE EXTERNO
         window.addEventListener("message", (event) => {
             if (event.origin !== window.location.origin) {
                 console.warn("Tentativa de injeção bloqueada: " + event.origin);
-                return; // Rejeita a mensagem
+                return; 
             }
         }, false);
     </script>
@@ -58,7 +57,7 @@
 
     <div id="menu-screen">
         <button id="btn-performance" onclick="ativarModoStealth()">Performance Mode</button>
-        <div style="margin-top: 20px; font-size: 10px; color: #222;">v7.1 SECURE</div>
+        <div style="margin-top: 20px; font-size: 10px; color: #222;">v7.1 SECURE POST</div>
     </div>
 
     <div id="stealth-layer"></div>
@@ -129,43 +128,53 @@
             let w = window.innerWidth;
             let h = window.innerHeight;
             
-            // --- MAPEAMENTO DOS NAIPES SÓLIDOS (Cheios) ---
-            // Cima = Espadas / Copas
-            // Baixo = Paus / Ouros
+            // --- MAPEAMENTO DOS NAIPES SÓLIDOS ---
             if (y < h / 2) {
-                if (x < w / 2) naipeDetectado = "%E2%99%A0"; // Espadas Cheio (♠)
-                else naipeDetectado = "%E2%99%A5";           // Copas Cheio (♥)
+                if (x < w / 2) naipeDetectado = "%E2%99%A0"; // Espadas (♠)
+                else naipeDetectado = "%E2%99%A5";           // Copas (♥)
             } else {
-                if (x < w / 2) naipeDetectado = "%E2%99%A3"; // Paus Cheio (♣)
-                else naipeDetectado = "%E2%99%A6";           // Ouros Cheio (♦)
+                if (x < w / 2) naipeDetectado = "%E2%99%A3"; // Paus (♣)
+                else naipeDetectado = "%E2%99%A6";           // Ouros (♦)
             }
             
             if (navigator.vibrate) navigator.vibrate(50);
             
+            // Chama a nova função de envio corrigida
             enviarSilencioso();
         }
 
-        // --- ENVIO SILENCIOSO ---
-        function enviarSilencioso() {
-            // Formato final exemplo: "Q %E2%99%A5" (Q ♥)
-            const textoFinal = `${valorDetectado} ${naipeDetectado}`;
-            
-            // Aqui conecta com o BACKEND (Autorizado pelo CSP 'self')
-            const urlBackend = `/api/send?text=${encodeURIComponent(textoFinal)}`;
+        // --- ENVIO SILENCIOSO CORRIGIDO (MÉTODO POST) ---
+        async function enviarSilencioso() {
+            // Cria o objeto exato que a Galeria espera
+            const objetoMagico = {
+                valor: valorDetectado,
+                naipe: naipeDetectado
+            };
 
-            console.log("Enviando: " + textoFinal);
+            console.log("Enviando via POST: ", objetoMagico);
 
-            fetch(urlBackend)
-            .then(res => {
-                if(res.ok) {
-                    console.log("Sucesso.");
+            try {
+                const response = await fetch('/api/send', {
+                    method: 'POST', // AGORA SIM: O Crachá Correto!
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        // O Pulo do Gato: Backend espera 'data' como string para salvar no Redis
+                        data: JSON.stringify(objetoMagico)
+                    })
+                });
+
+                if (response.ok) {
+                    console.log("✅ Sucesso! Backend aceitou.");
                     if (navigator.vibrate) navigator.vibrate(200); // Vibra longo pra confirmar
                     resetarSistema();
                 } else {
-                    console.error("Erro no backend.");
+                    console.error("❌ Erro no backend: " + response.status);
                 }
-            })
-            .catch(err => console.error("Erro de conexão.", err));
+            } catch (err) {
+                console.error("❌ Erro de conexão.", err);
+            }
         }
 
         function resetarSistema() {
