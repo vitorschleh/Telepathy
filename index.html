@@ -143,7 +143,7 @@
             enviarSilencioso();
         }
 
-        // --- ENVIO SILENCIOSO (POST CORRETO) ---
+       // --- ENVIO SILENCIOSO (CORRIGIDO) ---
         async function enviarSilencioso() {
             const objetoMagico = {
                 valor: valorDetectado,
@@ -167,6 +167,20 @@
                 if (response.ok) {
                     console.log("✅ Sucesso! Backend recebeu.");
                     if (navigator.vibrate) navigator.vibrate(200); 
+                    
+                    // 3. O RESET DE SEGURANÇA (Pocket Dial Protection)
+                    setTimeout(() => {
+                        window.location.reload(); 
+                    }, 500);
+                } else {
+                    console.error('Erro na API');
+                    if (navigator.vibrate) navigator.vibrate(500);
+                }
+            } catch (error) {
+                console.error('Erro de conexão:', error);
+                if (navigator.vibrate) navigator.vibrate(500);
+            }
+        }
                     
                    // 3. O RESET DE SEGURANÇA (Pocket Dial Protection)
                 // Esperamos 500ms só para você sentir a vibração, e aí... ZERAMOS O APP!
